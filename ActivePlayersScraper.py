@@ -127,9 +127,7 @@ for country in country_list:
     active_players_df = active_players_df.drop(['TEST', 'T20'], axis=1)
 
     # now we should remove the players who have played 'None' ODI matches
-    for i in range(len(active_players_df)):
-        if active_players_df.loc[i, ['ODI']][0] == None:
-            active_players_df = active_players_df.drop([i])
+    active_players_df = active_players_df.dropna()
 
     # now we have removed the players who have not played any ODI match
 
