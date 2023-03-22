@@ -1,0 +1,2 @@
+python ActivePlayersScraper.py
+python AddMoreInfo_ActivePlayersScraper.py

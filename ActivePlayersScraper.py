@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+import time
+
 #############################################################################################################
 
 # To get the active players in a team, we have to scrape data from the following endpoint of HowStat.com
@@ -40,6 +42,10 @@ for country in country_list:
 
     # making a request to the website to mimic a select operation on the website
     r = requests.post(active_players_url, data=payload)
+
+    # after making these requests, we should pause the program for some time 
+    # so as to avoid getting a timeout response from the website
+    time.sleep(1)
 
     # if the website does not repond with the correct information, loop automatically breaks
     if r.status_code != 200:
@@ -141,4 +147,4 @@ for country in country_list:
         active_players_df.to_excel(writer, 'Sheet 1', index=False)
 
     # for debugging print when a file is written
-    print(f"Added {country}")
+    print(f"...[LOG]... [STAGE-1] ... added {country}")
