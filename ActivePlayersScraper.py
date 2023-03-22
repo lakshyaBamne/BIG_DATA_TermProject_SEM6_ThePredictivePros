@@ -95,21 +95,21 @@ for country in country_list:
         if len(test_matches) > 10:
             TEST_LIST.append(None)
         else:
-            TEST_LIST.append(test_matches[1:-1])
+            TEST_LIST.append(int(test_matches[1:-1]))
 
         # ODI matches played
         odi_matches = all_rows[i].contents[9].text
         if len(odi_matches) > 10:
             ODI_LIST.append(None)
         else:
-            ODI_LIST.append(odi_matches[1:-1])
+            ODI_LIST.append(int(odi_matches[1:-1]))
 
         # T20 matches played
         t20_matches = all_rows[i].contents[11].text
         if len(t20_matches) > 10:
             T20_LIST.append(None)
         else:
-            T20_LIST.append(t20_matches[1:-1])
+            T20_LIST.append(int(t20_matches[1:-1]))
     
 
     # now we should append to the data frame
@@ -139,7 +139,7 @@ for country in country_list:
     # file name to which the pandas data frame is stored
     file_name = f"ActivePlayers_{country}.xlsx"
 
-    with pd.ExcelWriter('./sheets/' + file_name) as writer:
+    with pd.ExcelWriter('./sheets/active_players/' + file_name) as writer:
         active_players_df.to_excel(writer, 'Sheet 1', index=False)
 
     # for debugging print when a file is written
