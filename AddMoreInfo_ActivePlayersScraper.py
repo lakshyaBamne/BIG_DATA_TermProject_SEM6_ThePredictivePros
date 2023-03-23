@@ -12,8 +12,6 @@ import requests
 from bs4 import BeautifulSoup
 
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 
 import time
 
@@ -96,7 +94,7 @@ for country in country_list:
     # now we should export and re write the updated data frame to the same location
     with pd.ExcelWriter(f'./sheets/active_players/ActivePlayers_{country}.xlsx') as writer:
         active_players_df.to_excel(writer,'Sheet 1', index=False)
-        print(f"...[LOG]... [STAGE-2] ... updated {country}")
+        print(f"----------------------------------- UPDATED {country}----------------------------")
 
 
 
