@@ -1,6 +1,5 @@
 # This module can be used to scrape data from HowStat.com about :-
 #   1) Active Players in International Cricket (Test, ODI, T20) for any Team
-#   2) Find the Player statistics for each of these active players
 #############################################################################################################
 # Importing required libraries and modules
 
@@ -10,27 +9,16 @@ import pandas as pd
 
 import time
 
+# we need the list of countries to work with the scraping
+from scraper.Countries import country_list
+
 #############################################################################################################
+print("------------------------------------------------------------------------------------------------------")
+print("--------------------------------------- [DATA SCRAPING - STAGE 1] ------------------------------------")
+print("------------------------------------------------------------------------------------------------------")
 
 # To get the active players in a team, we have to scrape data from the following endpoint of HowStat.com
 active_players_url = "http://www.howstat.com/cricket/Statistics/Players/PlayerListCurrent.asp"
-
-# we can store the country code for teams for which we want to scrape data in a list
-# we are including the top 12 ODI ranked teams in the world at the time of making this project
-country_list = [
-    "IND",  # India
-    "AUS",  # Australia
-    "NZL",  # New Zealand
-    "ENG",  # England
-    "PAK",  # Pakistan
-    "SAF",  # South Africa
-    "BAN",  # Bangladesh
-    "SRL",  # Sri Lanka
-    "AFG",  # Afghanistan
-    "WIN",  # West Indies
-    "IRE",  # Ireland
-    "SCO"   # Scotland
-] 
 
 # We can make a data frame for each of these countries and then export it as an excel sheet
 # to be used in further scraping and analysis
@@ -126,23 +114,12 @@ for country in country_list:
     # now we have the data frame as the table on the website
     # this data frame can be used to get the active players from any format
 
-    # we want players who have atleast played one match in ODI cricket and not retired
-    # hence we can drop the Test and T20 columns
-    active_players_df = active_players_df.drop(['TEST', 'T20'], axis=1)
-
-    # now we should remove the players who have played 'None' ODI matches
-    active_players_df = active_players_df.dropna()
-
-    # now we have removed the players who have not played any ODI match
-
-    # we should export this data frame as an excel file to view the result 
-    # and use in further scraping steps
-
-    # file name to which the pandas data frame is stored
+    # so we should output this data frame as a master sheet from which useful
+    # information can be extracted later
     file_name = f"ActivePlayers_{country}.xlsx"
 
-    with pd.ExcelWriter('./sheets/active_players/' + file_name) as writer:
-        active_players_df.to_excel(writer, 'Sheet 1', index=False)
+    # the file write path should be relative to the main.py file in the root of the project
+    with pd.ExcelWriter(f'./sheets/main_db/active_players/all_formats/ActivePlayers_{country}.xlsx') as writer:
+        active_players_df.to_excel(writer, 'all_formats_raw', index=False)
 
-    # for debugging print when a file is written
     print(f"...[LOG]... [STAGE-1] ... added {country}")

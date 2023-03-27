@@ -1,3 +1,0 @@
-python ActivePlayersScraper.py
-python AddMoreInfo_ActivePlayersScraper.py
-python AddBatBowlCardsScraper.py

@@ -1,2 +1,4 @@
 venv/
 sheets/
+.idea/
+__pycache__/
