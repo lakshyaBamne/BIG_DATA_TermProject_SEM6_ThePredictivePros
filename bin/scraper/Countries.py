@@ -3,14 +3,14 @@
 country_list = [
     "IND",  # India
     "AUS",  # Australia
-    # "NZL",  # New Zealand
+    "NZL",  # New Zealand
     "ENG",  # England
-    # "PAK",  # Pakistan
-    # "SAF",  # South Africa
-    # "BAN",  # Bangladesh
-    # "SRL",  # Sri Lanka
-    # "AFG",  # Afghanistan
-    # "WIN",  # West Indies
-    # "IRE",  # Ireland
-    # "SCO"   # Scotland
+    "PAK",  # Pakistan
+    "SAF",  # South Africa
+    "BAN",  # Bangladesh
+    "SRL",  # Sri Lanka
+    "AFG",  # Afghanistan
+    "WIN",  # West Indies
+    "IRE",  # Ireland
+    "SCO"   # Scotland
 ]
