@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 
 from scraper.Countries import country_list
 
+# we must use absolute paths in the streamlit application scripts
+from pathlib import Path
+
 #############################################################################################
 
 st.sidebar.write("""
@@ -43,7 +46,8 @@ if country == 'ALL':
 
     for country in country_list:
         # first we should get the active players data of the country 
-        active_players = pd.read_excel(f'./sheets/main_db/active_players/all_formats/ActivePlayers_{country}.xlsx')
+        absolute_path = Path(__file__).parent / f'sheets/main_db/active_players/all_formats/ActivePlayers_{country}.xlsx'
+        active_players = pd.read_excel(absolute_path)
         
         # number of players which are active in atleast one format
         total_players = len(active_players)
@@ -108,8 +112,8 @@ else:
     # to show the stats as a pie chart we first need the data
 
     # we can find the data frame for the selected country from the files scraped by the program
-    active_players = pd.read_excel(f'./sheets/main_db/active_players/all_formats/ActivePlayers_{country}.xlsx')
-
+    absolute_path = Path(__file__).parent / f'sheets/main_db/active_players/all_formats/ActivePlayers_{country}.xlsx'
+    active_players = pd.read_excel(absolute_path)
     # st.dataframe(active_players)
 
     # we want to make a pie chart for the number of players in the three formats for this country
