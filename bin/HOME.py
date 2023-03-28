@@ -22,8 +22,8 @@ st.write("""
     ---
 
     * Navigate to the different pages present on the sidebar to view the data in various formats.
-        * ***Active Players*** - to view the various active players in a country in various formats of cricket.
-
+        * ***Active Players*** - to view various active players in a country in various formats of cricket.
+        * ***project Details*** - to view details about the project like team members, repository links, etc.
     ---
         
 """)
