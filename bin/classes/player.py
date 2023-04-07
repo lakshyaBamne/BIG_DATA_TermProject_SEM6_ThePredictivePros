@@ -1,8 +1,8 @@
 # Importing the required libraries
 import requests
 from bs4 import BeautifulSoup
-
 import pandas as pd
+import time
 
 class Player:
     """
@@ -18,9 +18,13 @@ class Player:
     # class variables which represent important information using which information is scraped
     # using these variables, the appropriate methods create the correct url where player information is present
     ROOT_URL = 'http://howstat.com/cricket/Statistics/Players/'
+    ROOT_MATCH_SCORECARD = 'http://www.howstat.com/cricket/Statistics/Matches/'
 
     # the following parts help create the correct URL for some aspect related to the player
-    ROOT_MATCH_SCORECARD = 'http://www.howstat.com/cricket/Statistics/'
+    ROOT_ODI_MATCH = 'MatchScorecard_ODI.asp?MatchCode='
+    ROOT_T20_MATCH = 'MatchScorecard_T20.asp?MatchCode='
+
+    ROOT_ODI_MATCH_END = '&Print=Y'
     
     ROOT_PLAYER_OVERVIEW = 'PlayerOverviewSummary.asp?PlayerID='
 
@@ -57,16 +61,33 @@ class Player:
         return f"{self.NAME} ({self.ID})"
 
     # OBJECT METHODS to bring functionality to the class objects
-    
-    def GET_Overview(self) -> tuple:
+
+    def UTIL_MakeSoup(self, PAGE_URL: str) -> BeautifulSoup:
+        """
+            Utility Function to make a get request to the given URL 
+            and return the parsed string
+        """
+        
+        # we also sleet the function for 1 second to avoid getting timed out
+        time.sleep(1)
+
+        r = requests.get(PAGE_URL)
+        soup = BeautifulSoup(r.content, "html.parser")
+
+        return soup
+
+    def GET_Overview(self) -> pd.DataFrame:
         """
             method to get the overview page of the player to extract useful information about the player
 
-            returned tuple => (player_fullname, batting_hand, bowling_style)
+            returned dataframe with the following fields => "ID, "NAME", "BATTING_HAND", "BOWL_STYLE"
         """
 
         # first we need to create the correct URL to go to the overview page
         OVERVIEW_PAGE = self.ROOT_URL + self.ROOT_PLAYER_OVERVIEW + f'{self.ID}'
+
+        # creating a new data frame to store the basic information about the player
+        player_overview_df = pd.DataFrame()
 
         # now we need to make a get request to the required page
         try:
@@ -76,14 +97,29 @@ class Player:
             soup = BeautifulSoup(r_overview.content,"html.parser")
 
             required_table = soup.find_all("table")[0].find_all('table')[0].find_all('table')[0]
+            
+            PLAYER_ID = []
+            PLAYER_NAME = []
+            BATTING_HAND = []
+            BOWL_STYLE = []
 
             # variables to store the information recieved for the player
             player_name = required_table.find_all('tr')[2].find_all('td')[1].text[11:-11]
             batting_hand = required_table.find_all('tr')[5].find_all('td')[1].text[11:-10]
             bowl_style = required_table.find_all('tr')[6].find_all('td')[1].text[11:-10]
 
+            PLAYER_ID.append(self.ID)
+            PLAYER_NAME.append(player_name)
+            BATTING_HAND.append(batting_hand)
+            BOWL_STYLE.append(bowl_style)
+
+            player_overview_df["ID"] = pd.Series(PLAYER_ID)
+            player_overview_df["NAME"] = pd.Series(PLAYER_NAME)
+            player_overview_df["BATTING_HAND"] = pd.Series(BATTING_HAND)
+            player_overview_df["BOWL_STYLE"] = pd.Series(BOWL_STYLE)
+
             # returning all the information bundled in a single tuple
-            return (player_name, batting_hand, bowl_style)
+            return player_overview_df
             
         except Exception as error:
             # if overview page is not received, the function terminates and nothing is done
@@ -121,6 +157,142 @@ class Player:
 
         return (num_test, num_odi, num_t20)
 
+    def GET_OdiPlayerMatchDetailsBat(self, MATCH_CODE: list, PLAYER_TEAM: str) -> pd.DataFrame:
+        """
+            Finds some more attriibutes of a player's batting performance for a particular match
+            
+            function takes in input the list of matches for which we want to find the attributes
+            and the team for which the player plays
+
+            returns a data frame with the required fields
+            
+            => BATTING_POSITION, NUM_4, NUM_6, PERCENT_RUNS_OF_TOTAL, MAN_OF_MATCH
+        """
+
+        # first let us initialize some variables which we can use later in the program
+
+        # data frame to be returned by the method later
+        odi_batting_extra_df = pd.DataFrame()
+
+        # we need to populate these lists so that later they can be appended to the data frame
+        BATTING_POSITION = []
+        NUM_4 = []
+        NUM_6 = []
+        PERCENT_RUNS_OF_TOTAL = []
+        MAN_OF_MATCH = []
+
+        # we make a separate list of URL's to navigate to later and scrape the data
+        PAGES = []
+        for match_code in MATCH_CODE:
+            OVERVIEW_PAGE = self.ROOT_MATCH_SCORECARD + self.ROOT_ODI_MATCH + str(match_code) + self.ROOT_ODI_MATCH_END
+            PAGES.append(OVERVIEW_PAGE)
+
+        # now we need to scrape each of the url and get the required information
+        count_good_pages = 0
+        total_pages = len(MATCH_CODE)
+
+        for page in PAGES:
+
+            # these variables will be updated for each new iteration
+            batting_position = None
+            num_4 = None
+            num_6 = None
+            percent_runs = None
+            man_of_match = "NO"
+
+            try:
+                # using custom function to get the data and parse it
+                soup = self.UTIL_MakeSoup(page)
+
+                # some match pages are not returning the complete data about the match
+                # so we can only extract the information for some matches of the player
+                num_rows_returned = len(soup.find("table", class_="Scorecard").findChildren("tr", recursive=False))
+
+                if num_rows_returned != 38:
+                    print("[ERROR] website not responding correctly")
+                else:
+                    count_good_pages = count_good_pages + 1
+
+                    # this list contains all the import information that we need
+                    tr_list = soup.find("table", class_="Scorecard").findChildren("tr", recursive=False)
+
+                    FIRST_BATTING = tr_list[0].contents[1].text[24:-22]
+                    SECOND_BATTING = tr_list[19].contents[1].text[24:-36]
+
+                    batter_list = []
+
+                    # now we can get the batting stats of the player using this information
+                    if FIRST_BATTING == PLAYER_TEAM:
+                        # player's batting comes in the first innings
+                        for i in range(1, 12):
+                            batter_list.append( str(tr_list[i].contents[1].contents[1].get('href')[-4:]) )
+                        
+                        # finding the batting position of the player
+                        batting_position = batter_list.index(self.ID) + 1
+
+                        # now we can get the other information of the batter
+                        # => 4's, 6's, percent runs of total
+                        num_4 = tr_list[batting_position].contents[9].text[25:-22]
+                        num_6 = tr_list[batting_position].contents[11].text[25:-22]
+                        percent_runs = tr_list[batting_position].contents[15].text[3:-35]
+                    else:
+                        # player's batting comes in the second innings
+                        for i in range(20, 30):
+                            batter_list.append( str(tr_list[i].contents[1].contents[1].get('href')[-4:]) )
+                        
+                        # finding the batting position of the player
+                        batting_position = batter_list.index(self.ID) + 1
+
+                        # now we can get the other information of the batter
+                        # => 4's, 6's, percent runs of total
+                        num_4 = tr_list[19 + batting_position].contents[9].text[25:-22]
+                        num_6 = tr_list[19 + batting_position].contents[11].text[25:-22]
+                        percent_runs = tr_list[19 + batting_position].contents[15].text[3:-35]
+
+                    # now we need to find if the player was the man of the match or not
+                    try:
+                        outer_table = soup.body.findChildren("table", recursive=False)[1].contents[1].contents[1]
+                        match_information_table = outer_table.findChildren("table", recursive=False)[1].findChildren("table", recursive=False)[0]
+                        required_tr = match_information_table.findChildren("tr", recursive=False)[6]
+                        player_of_match = required_tr.contents[3].contents[1].get('href')[-4:]
+                        
+                        # checking if the player is the man of the match
+                        if player_of_match == self.ID:
+                            man_of_match = "YES"
+                        else:
+                            pass
+                    except:
+                        pass
+
+                    print(f"---[ADDED INFO]---")
+
+                BATTING_POSITION.append(batting_position)
+                NUM_4.append(num_4)
+                NUM_6.append(num_6)
+                PERCENT_RUNS_OF_TOTAL.append(percent_runs)
+                MAN_OF_MATCH.append(man_of_match)
+            
+            except:
+                print(f'...[ERROR]... Exception occured for {page} ...')
+
+        print(f"Number of pages working correctly => [{count_good_pages} / {total_pages}] => {(count_good_pages/total_pages)*100}")
+
+        # now we can append the lists to the data frame and return it to the user
+        odi_batting_extra_df["MATCH_CODE"] = pd.Series(MATCH_CODE)
+        odi_batting_extra_df["BATTING_POSITION"] = pd.Series(BATTING_POSITION)
+        odi_batting_extra_df["NUM_4"] = pd.Series(NUM_4)
+        odi_batting_extra_df["NUM_6"] = pd.Series(NUM_6)
+        odi_batting_extra_df["PERCENT_RUNS_OF_TOTAL"] = pd.Series(PERCENT_RUNS_OF_TOTAL)
+        odi_batting_extra_df["MAN_OF_MATCH"] = pd.Series(MAN_OF_MATCH)
+
+        return odi_batting_extra_df
+        
+    def GET_OdiPlayerMatchDetailsBowl():
+        """
+
+        """
+        pass
+
     def GET_OdiBatPerformance(self) -> pd.DataFrame:
         """
             method which returns a data frame containing the ODI Batting performance of the player.
@@ -148,7 +320,7 @@ class Player:
             MATCH_NUMBER = []
             INNING_NUMBER = []
             MATCH_DATE = []
-            MATCH_CARD_LINK = []
+            MATCH_CODE = []
             MATCH_INNING = []
             OPPONENT = []
             VENUE = []
@@ -161,7 +333,8 @@ class Player:
                 MATCH_NUMBER.append(one_row[1].text[22:-20])
                 INNING_NUMBER.append(one_row[3].text[22:-20])
                 MATCH_DATE.append(one_row[5].contents[1].text)
-                MATCH_CARD_LINK.append(self.ROOT_MATCH_SCORECARD + one_row[5].contents[1].get('href')[3:])
+                scorecard_link = self.ROOT_MATCH_SCORECARD + one_row[5].contents[1].get('href')[3:]
+                MATCH_CODE.append(scorecard_link[-4:])
                 MATCH_INNING.append(one_row[7].text[12:-20])
                 OPPONENT.append(one_row[9].text[22:-20])
                 VENUE.append(one_row[11].text[22:-20])
@@ -173,7 +346,7 @@ class Player:
             player_bat_df['MATCH_NUMBER'] = MATCH_NUMBER 
             player_bat_df['INNING_NUMBER'] = INNING_NUMBER
             player_bat_df['MATCH_DATE'] = MATCH_DATE
-            player_bat_df['MATCH_CARD_LINK'] = MATCH_CARD_LINK
+            player_bat_df['MATCH_CODE'] = MATCH_CODE
             player_bat_df['MATCH_INNING'] = MATCH_INNING
             player_bat_df['OPPONENT'] = OPPONENT
             player_bat_df['VENUE'] = VENUE
@@ -210,7 +383,7 @@ class Player:
 
                 # empty lists that will represent single attributes in the bowling card of the player
                 MATCH_NUMBER = []
-                MATCH_CARD_LINK = []
+                MATCH_CODE = []
                 MATCH_INNING = []
                 OPPONENT = []
                 VENUE = []
@@ -222,7 +395,8 @@ class Player:
                     one_row = row.contents
 
                     try:
-                        MATCH_CARD_LINK.append(self.ROOT_MATCH_SCORECARD + one_row[3].contents[1].get('href')[3:])
+                        scorecard_link = self.ROOT_MATCH_SCORECARD + one_row[3].contents[1].get('href')[3:]
+                        MATCH_CODE.append(scorecard_link[-4:])
                         MATCH_NUMBER.append(one_row[1].text[22:-20])
                         MATCH_INNING.append(one_row[5].text[12:-20])
                         OPPONENT.append(one_row[7].text[22:-20])
@@ -235,7 +409,7 @@ class Player:
                 
                 # now let us push the fileds in the data frame
                 player_bowl_df['MATCH_NUMBER'] = pd.Series(MATCH_NUMBER)
-                player_bowl_df['MATCH_CARD_LINK'] = pd.Series(MATCH_CARD_LINK)
+                player_bowl_df['MATCH_CODE'] = pd.Series(MATCH_CODE)
                 player_bowl_df['MATCH_INNING'] = pd.Series(MATCH_INNING)
                 player_bowl_df['OPPONENT'] = pd.Series(OPPONENT)
                 player_bowl_df['VENUE'] = pd.Series(VENUE)
@@ -281,7 +455,7 @@ class Player:
             MATCH_NUMBER = []
             INNING_NUMBER = []
             MATCH_DATE = []
-            MATCH_CARD_LINK = []
+            MATCH_CODE = []
             MATCH_INNING = []
             OPPONENT = []
             VENUE = []
@@ -294,7 +468,8 @@ class Player:
                 MATCH_NUMBER.append(one_row[1].text[22:-20])
                 INNING_NUMBER.append(one_row[3].text[22:-20])
                 MATCH_DATE.append(one_row[5].contents[1].text)
-                MATCH_CARD_LINK.append(self.ROOT_MATCH_SCORECARD + one_row[5].contents[1].get('href')[3:])
+                scorecard_link = self.ROOT_MATCH_SCORECARD + one_row[5].contents[1].get('href')[3:]
+                MATCH_CODE.append(scorecard_link[-4:])
                 MATCH_INNING.append(one_row[7].text[12:-20])
                 OPPONENT.append(one_row[9].text[22:-20])
                 VENUE.append(one_row[11].text[22:-20])
@@ -306,7 +481,7 @@ class Player:
             player_bat_df['MATCH_NUMBER'] = MATCH_NUMBER 
             player_bat_df['INNING_NUMBER'] = INNING_NUMBER
             player_bat_df['MATCH_DATE'] = MATCH_DATE
-            player_bat_df['MATCH_CARD_LINK'] = MATCH_CARD_LINK
+            player_bat_df['MATCH_CODE'] = MATCH_CODE
             player_bat_df['MATCH_INNING'] = MATCH_INNING
             player_bat_df['OPPONENT'] = OPPONENT
             player_bat_df['VENUE'] = VENUE
@@ -344,7 +519,7 @@ class Player:
 
                 # empty lists that will represent single attributes in the bowling card of the player
                 MATCH_NUMBER = []
-                MATCH_CARD_LINK = []
+                MATCH_CODE = []
                 MATCH_INNING = []
                 OPPONENT = []
                 VENUE = []
@@ -356,7 +531,8 @@ class Player:
                     one_row = row.contents
 
                     try:
-                        MATCH_CARD_LINK.append(self.ROOT_MATCH_SCORECARD + one_row[3].contents[1].get('href')[3:])
+                        scorecard_link = self.ROOT_MATCH_SCORECARD + one_row[3].contents[1].get('href')[3:]
+                        MATCH_CODE.append(scorecard_link[-4:])
                         MATCH_NUMBER.append(one_row[1].text[22:-20])
                         MATCH_INNING.append(one_row[5].text[12:-20])
                         OPPONENT.append(one_row[7].text[22:-20])
@@ -369,7 +545,7 @@ class Player:
                 
                 # now let us push the fileds in the data frame
                 player_bowl_df['MATCH_NUMBER'] = pd.Series(MATCH_NUMBER)
-                player_bowl_df['MATCH_CARD_LINK'] = pd.Series(MATCH_CARD_LINK)
+                player_bowl_df['MATCH_CODE'] = pd.Series(MATCH_CODE)
                 player_bowl_df['MATCH_INNING'] = pd.Series(MATCH_INNING)
                 player_bowl_df['OPPONENT'] = pd.Series(OPPONENT)
                 player_bowl_df['VENUE'] = pd.Series(VENUE)

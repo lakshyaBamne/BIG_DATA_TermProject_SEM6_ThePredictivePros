@@ -1,5 +1,8 @@
 # Extracting statistics of the active odi players using the Player class
 # and it's methods
+# => Overview for the player is extracted
+# => ODI Batting performance
+# => ODI Bowling performance
 
 ##########################################################################################################
 # Importing the required libraries
@@ -10,7 +13,7 @@ from bs4 import BeautifulSoup
 import time
 
 # we need to import the list of countries to be used in the scraping 
-from scraper.Countries import country_list
+from scraper.Countries import country_list, espn_country_list
 
 # importing the Player class
 from classes.player import Player
@@ -49,19 +52,31 @@ for country in country_list:
         # we need to instantiate the Player class for each player whose information we require
         one_player = Player(id)
 
+        # we need the player team to be used later
+        PLAYER_TEAM = espn_country_list[f"{country}"][0]
+
+        # let us get the player overview in a new data frame and store it in a sheet 
+        # of the workbook
+        overview_df = one_player.GET_Overview()
+
         # since we only want the ODI information about the players
-        # we use the following two methods only
+        # we use the following two methods to get the required data
         odi_bat_df = one_player.GET_OdiBatPerformance()
         odi_bowl_df = one_player.GET_OdiBowlPerformance()
 
         # now we can store this obtained information in an excel sheet
         with pd.ExcelWriter(f'./sheets/main_db/teams/{country}/PlayerPerformance_{id}.xlsx') as writer:
+            # overview for the player is always present
+            overview_df.to_excel(writer, index=False, sheet_name="Player Info")
+
             # batting record of the player is always present
             odi_bat_df.to_excel(writer, index=False, sheet_name="ODI Batting")
             
             # bowling record may not be present for some player
             try:
                 odi_bowl_df.to_excel(writer, index=False, sheet_name="ODI Bowling")
+
+                # the extra details for the player's bowling will only be found if he has a bowling record
             except:
                 # if bowling record is not found, then we can be sure that this is a pure batsman
                 BATSMEN.append(id)

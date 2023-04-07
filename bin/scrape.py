@@ -16,7 +16,10 @@ exec(open('./scraper/Scraper_2.py').read())
 exec(open('./scraper/Scraper_3.py').read())
 
 ##################################################################################################
+# now we scrape some more extra information about a player's Batting and Bowling performance
+# these are stored in a separate sheet in the same workbook for every player
+exec(open('./scraper/Scraper_4.py').read())
 
-
+##################################################################################################
 
 
