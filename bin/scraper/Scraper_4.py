@@ -46,21 +46,18 @@ for country in country_list:
                 sheet_name='ODI Batting'
             )['MATCH_CODE']
         ))
-
-        if len(MATCH_CODE) >= 20:
-            odi_batting_extra_df = one_player.GET_OdiPlayerMatchDetailsBat(MATCH_CODE[-20:], PLAYER_TEAM)
+        
+        odi_batting_extra_df = one_player.GET_OdiPlayerMatchDetailsBat(MATCH_CODE[-20:], PLAYER_TEAM)
             
-            # we should first test if the returned data frame is empty or not
-            if len(odi_batting_extra_df) == 0:
-                print(f'... [ERROR] ... extra batting info not found for {player} ({country}) ...')
-            else:
-                path = f'./sheets/main_db/teams/{country}/PlayerPerformance_{player}.xlsx'
-
-                with pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-                    odi_batting_extra_df.to_excel(writer, sheet_name='ODI Batting Extra', index=False)
-                    print(f'... [LOG] ... added info for {player} ({country}) ...')
+        # we should first test if the returned data frame is empty or not
+        if len(odi_batting_extra_df) == 0:
+            print(f'... [ERROR] ... extra batting info not found for {player} ({country}) ...')
         else:
-            print(f'... [IGNORED] ... not enought matches for {player} ({country})')
+            path = f'./sheets/main_db/teams/{country}/PlayerPerformance_{player}.xlsx'
+
+            with pd.ExcelWriter(path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+                odi_batting_extra_df.to_excel(writer, sheet_name='ODI Batting Extra', index=False)
+                print(f'... [LOG] ... added info for {player} ({country}) ...')
 
 print("------------------------------------------------------------------------------------------------------")
 print("--------------------------------------------- [SCRAPING END] -----------------------------------------")
