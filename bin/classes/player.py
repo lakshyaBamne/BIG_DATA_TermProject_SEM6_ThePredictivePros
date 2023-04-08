@@ -287,11 +287,95 @@ class Player:
 
         return odi_batting_extra_df
         
-    def GET_OdiPlayerMatchDetailsBowl():
+    def GET_OdiPlayerMatchDetailsBowl(self, MATCH_CODE: list, PLAYER_TEAM: str) -> pd.DataFrame:
+        """
+            Method returns a data frame with some extra attributes about a player's
+            bowling record for the given matches 
         """
 
-        """
-        pass
+        # first let us initialize some variables which we can use later in the program
+
+        # data frame to be returned by the method later
+        odi_bowling_extra_df = pd.DataFrame()
+
+        # we need to populate these lists so that later they can be appended to the data frame
+        MAIDEN_OVERS = []
+        PERCENT_WICKETS_OF_ALL = []
+
+        # we make a separate list of URL's to navigate to later and scrape the data
+        PAGES = []
+        for match_code in MATCH_CODE:
+            OVERVIEW_PAGE = self.ROOT_MATCH_SCORECARD + self.ROOT_ODI_MATCH + str(match_code) + self.ROOT_ODI_MATCH_END
+            PAGES.append(OVERVIEW_PAGE)
+
+        # now we need to scrape each of the url and get the required information
+        count_good_pages = 0
+        total_pages = len(MATCH_CODE)
+
+        for page in PAGES:
+            maiden_overs = None
+            percent_wickets = None
+            
+            try:
+                # using custom function to get the data and parse it
+                soup = self.UTIL_MakeSoup(page)
+
+                # some match pages are not returning the complete data about the match
+                # so we can only extract the information for some matches of the player
+                num_rows_returned = len(soup.find("table", class_="Scorecard").findChildren("tr", recursive=False))
+
+                if num_rows_returned != 38:
+                    print("[ERROR] website not responding correctly")
+                else:
+                    count_good_pages = count_good_pages + 1
+
+                    # this list contains all the import information that we need
+                    tr_list = soup.find("table", class_="Scorecard").findChildren("tr", recursive=False)
+
+                    # when we know who is the first batting side we can find the bowling sides as well
+                    FIRST_BOWLING = tr_list[19].contents[1].text[24:-36]
+
+                    bowler_list = []
+                    inner_list = []
+
+                    if FIRST_BOWLING == PLAYER_TEAM:
+                        # player bowls in the first innings
+                        required_table = tr_list[17]
+                        inner_list = required_table.contents[1].find("table").findChildren("tr", recursive=False)
+
+                    else:
+                        # player bowls in the second innings
+                        required_table = tr_list[36]
+                        inner_list = required_table.contents[1].find("table").findChildren("tr", recursive=False)    
+
+                    inner_list = inner_list[1:]
+
+
+                    for tr in inner_list:
+                        bowler_list.append( tr.contents[1].contents[1].get('href')[-4:] )
+
+                    required_tr = inner_list[ bowler_list.index(self.ID) ]
+
+                    maiden_overs = required_tr.contents[5].text[30:-28]
+                    percent_wickets = required_tr.contents[13].text[3:-30]
+
+                    print(f"...[LOG]... added info ... ")
+            except:
+                print(f"Exception occured for page : {page}")
+            
+            # now we can append the information to the list    
+            MAIDEN_OVERS.append(maiden_overs)
+            PERCENT_WICKETS_OF_ALL.append(percent_wickets)
+
+
+        print(f"Number of pages working correctly => [{count_good_pages} / {total_pages}] => {(count_good_pages/total_pages)*100}")
+        
+        # now we can add the lists to the data frame and return to the user
+        odi_bowling_extra_df["MATCH_CODE"] = pd.Series(MATCH_CODE)
+        odi_bowling_extra_df["MAIDEN_OVERS"] = pd.Series(MAIDEN_OVERS)
+        odi_bowling_extra_df["PERCENT_WICKETS_OF_ALL"] = pd.Series(PERCENT_WICKETS_OF_ALL)
+
+        return odi_bowling_extra_df
 
     def GET_OdiBatPerformance(self) -> pd.DataFrame:
         """
