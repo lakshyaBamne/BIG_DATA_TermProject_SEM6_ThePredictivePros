@@ -9,7 +9,7 @@ country_list = [
     "SAF",  # South Africa
     "BAN",  # Bangladesh
     "SRL",  # Sri Lanka
-    "AFG",  # Afghanistan
+    # "AFG",  # Afghanistan
     "WIN",  # West Indies
     "IRE",  # Ireland
     "SCO"   # Scotland
