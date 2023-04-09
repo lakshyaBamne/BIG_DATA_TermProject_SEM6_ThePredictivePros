@@ -45,7 +45,7 @@ for country in country_list:
                 )['MATCH_CODE']
             ))
 
-            odi_batting_extra_df = one_player.GET_OdiPlayerMatchDetailsBowl(MATCH_CODE[-20:], PLAYER_TEAM)
+            odi_batting_extra_df = one_player.GET_OdiPlayerMatchDetailsBowl(MATCH_CODE, PLAYER_TEAM)
                 
             # we should first test if the returned data frame is empty or not
             if len(odi_batting_extra_df) == 0:
