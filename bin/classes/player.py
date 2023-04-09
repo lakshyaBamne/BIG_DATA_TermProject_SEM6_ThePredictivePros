@@ -125,6 +125,9 @@ class Player:
             # if overview page is not received, the function terminates and nothing is done
             return f"[ERROR] => Overview Page not responding for PlayerID={self.ID}\n[EXCEPTION RAISED] {error}"
         
+    def GET_OverviewTemp(self) -> pd.DataFrame:
+        pass
+    
     def GET_IntlStatus(self, df: pd.DataFrame) -> tuple:
         """
             method returns the number of International matches played in the three formats in order
