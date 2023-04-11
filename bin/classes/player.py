@@ -269,14 +269,14 @@ class Player:
 
                     print(f"---[ADDED INFO]---")
 
-                BATTING_POSITION.append(batting_position)
-                NUM_4.append(num_4)
-                NUM_6.append(num_6)
-                PERCENT_RUNS_OF_TOTAL.append(percent_runs)
-                MAN_OF_MATCH.append(man_of_match)
-            
             except:
                 print(f'...[ERROR]... Exception occured for {page} ...')
+
+            BATTING_POSITION.append(batting_position)
+            NUM_4.append(num_4)
+            NUM_6.append(num_6)
+            PERCENT_RUNS_OF_TOTAL.append(percent_runs)
+            MAN_OF_MATCH.append(man_of_match)
 
         print(f"Number of pages working correctly => [{count_good_pages} / {total_pages}] => {(count_good_pages/total_pages)*100}")
 
