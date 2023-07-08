@@ -1,18 +1,18 @@
 # we can store the country code for teams for which we want to scrape data in a list
 # we are including the top 12 ODI ranked teams in the world at the time of making this project
 country_list = [
-    "IND",  # India
-    # "AUS",  # Australia
-    # "NZL",  # New Zealand
-    # "ENG",  # England
-    # "PAK",  # Pakistan
-    # "SAF",  # South Africa
-    # "BAN",  # Bangladesh
-    # "SRL",  # Sri Lanka
-    # "AFG",  # Afghanistan
-    # "WIN",  # West Indies
-    # "IRE",  # Ireland
-    # "SCO"   # Scotland
+    # "IND",  # India -> 51 Active ODI Players
+    # "AUS",  # Australia -> 40 Active ODI Players
+    "NZL",  # New Zealand -> 38 Active ODI Players
+    # "ENG",  # England -> 44 Active ODI Players
+    # "PAK",  # Pakistan -> 47 Active ODI Players
+    # "SAF",  # South Africa -> 38 Active ODI Players
+    # "BAN",  # Bangladesh -> 31 Active ODI Players
+    # "SRL",  # Sri Lanka -> 49 Active ODI Players
+    # "AFG",  # Afghanistan -> 34 Active ODI Players
+    # "WIN",  # West Indies -> 63 Active ODI Players
+    # "IRE",  # Ireland -> 24 Active ODI Players
+    # "SCO"   # Scotland -> 26 Active ODI Players
 ]
 
 espn_country_list = {
